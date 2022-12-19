@@ -1,4 +1,4 @@
-from Rules import Rules
+from rules import Rules
 from linter import Linter
 
 

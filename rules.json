@@ -1,3 +1,9 @@
 {
-  "max_enters": 1
+  "max_enters": 1,
+  "max_spaces": 1,
+  "tabulation_size": 4,
+  "alphabet_variable": ["a-z", "A-Z"],
+  "is_camel_case": true,
+
+  "transfer_after_bracket": true
 }
