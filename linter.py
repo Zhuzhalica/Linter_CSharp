@@ -15,6 +15,7 @@ class Linter:
     def run(self, path_code: str):
         with open(path_code, 'r', encoding='UTF-8') as code:
             for line in code:
+                # возможно стоит перенести проверки внутрь класса rules, но это мало что изменит, тогда просто он будет на 200 строк
                 self.check_line_length(line)
 
                 if self.in_method:
@@ -32,6 +33,8 @@ class Linter:
                         self.in_method = True
                         self.first_inner_line = True
 
+
+                # по идее у переменных внутри метода и внутри класса есть одинаковый способ объявления типо: "HashSet<int> T;", но при этом другие типы объявления внутри и вне метода отличются и не должны пересекаться (тоесть "public static  HashSet<int> T;" не может быть внутри метода, а var вне). Сейчас они могут быть везде
                 decls = self.check_method_variable_declaration(line)
                 if len(decls) > 0:
                     for decl in decls:
@@ -128,6 +131,7 @@ class Linter:
                     self.offset_level += 1
                 if word == '}':
                     self.offset_level -= 1
+                # после методов как for и т.д. может не быть скобок, если метод в одну строчку, надо это как-то обработать, но я не могу понять как это правильно сделать
                 # if word in self.rules.tabulation_after_command:
                 #     self.
 
