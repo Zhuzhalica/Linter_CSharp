@@ -1,4 +1,4 @@
-﻿      private static  void    Main()
+﻿keys = new HashSet<Tuple<int, char>>()
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,19 +16,18 @@ namespace main
 
         private static void Main ()
         {
-            ReadLine()
-            var s =  Console.ReadLine ().Split(' ');
+            var s = Console.ReadLine().Split(' ');
             var n = int.Parse(s[0]);
             var alphCount = int.Parse(s[1]);
 
             var SCount = int.Parse(Console.ReadLine());
             var S = Console.ReadLine().Split().Select(x => int.Parse(x)).ToArray();
 
-            var TCount = int.Parse(Console.ReadLine());
+            var TCount=int.Parse(Console.ReadLine());
             T = Console.ReadLine().Split().Select(x => int.Parse(x)).ToHashSet();
 
             dict = new Dictionary<Tuple<int, char>, int[]>();
-            keys = new HashSet<Tuple<int, char>>();
+            keys = new HashSet<Tuple<int, char>>()
             for (var i = 0; i < n; i++)
             {
                 for (var j = 0; j < alphCount; j++)
@@ -45,7 +44,7 @@ namespace main
                     }
                     else
                     {
-                        dict.Add(key, new int[0]);
+                            dict.Add(key, new int[0]);
                     }
                 }
             }
@@ -61,9 +60,11 @@ namespace main
             GetAnswer(S, words);
         }
 
+        public static Dictionary<Tuple<int, char>, int[]> dict = sadsadsadsa;
 
         public static void GetAnswer(int[] S, List<string> words)
         {
+            public static void GetAnswer(int[] S, List<string> words)
             foreach (var word in words)
             {
                 var h_ = new HashSet<int>();
@@ -73,9 +74,6 @@ namespace main
 
                 while (index < word.Length)
                 {
-                    h_ = h_
-                        .Select(t => Tuple.Create(t, word[index]))
-                        .Aggregate(h_, (current, tupl) => current.Concat(dict[tupl]).ToHashSet());
                     index++;
                 }
 

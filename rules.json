@@ -4,14 +4,12 @@
   "tabulation_size": 4,
   "alphabet_variable": ["a-z", "A-Z"],
   "variable_camel_case": true,
-  "min_enters_after_method": 1,
-  "max_enters_after_method": 2,
-  "characters_separated_spaces": ["+", "-", "*", "/", "%", "<", ">", "<=", ">=", "=", "==", "!=", "=>", ";"],
+  "characters_separated_spaces": ["+", "-", "*", "/", "%", "=", "==", "!=", "=>",
+    "+=", "-=", "*=", "/=", "%="],
   "method_pascal_case": true,
   "bracket_separate_line": true,
   "max_symbol_line": 120,
   "separate_symbol": ";",
   "inner_variable_lowercase": true,
-
   "tabulation_after_command": ["for","foreach", "while", "if", "else", "switch", "try", "catch", "finally"]
 }

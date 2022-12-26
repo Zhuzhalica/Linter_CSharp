@@ -5,8 +5,6 @@ class Rules:
     def __init__(self, path: str):
         self.max_symbol_line: int = 0
         self.max_enters: int = 0
-        self.min_enters_after_method: int = 0
-        self.max_enters_after_method: int = 0
         self.max_spaces: int = 0
         self.tabulation_size: int = 0
         self.bracket_separate_line: bool = True
@@ -26,12 +24,8 @@ class Rules:
         for rule in rules.keys():
             if rule == 'max_enters':
                 self.max_enters = rules[rule]
-            elif rule == 'min_enters_after_method':
-                self.min_enters_after_method = rules[rule]
-            elif rule == 'max_enters_after_method':
-                self.max_enters_after_method = rules[rule]
             elif rule == 'max_spaces':
-                self.max_enters = rules[rule]
+                self.max_spaces = rules[rule]
             elif rule == 'tabulation_size':
                 self.tabulation_size = rules[rule]
             elif rule == 'transfer_after_bracket':
