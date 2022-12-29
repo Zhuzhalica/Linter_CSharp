@@ -2,7 +2,7 @@ from error import Error
 from error_type import Error_type
 from rules import Rules
 import re
-
+from collections import defaultdict
 
 class Linter:
     def __init__(self, rules: Rules):
@@ -11,101 +11,111 @@ class Linter:
         self.enters_count: int = 0
         self.offset_level: int = 0
         self.errors: list[Error] = []
-
+        self.dict_variables: defaultdict[str, list[int]] = defaultdict(list)
+        self.dict_methods: defaultdict[str, list[int]] = defaultdict(list)
         self.in_method: bool = False
         self.first_inner_line_method: bool = False
         self.first_inner_line_func: bool = False
+        self.tabs_check: bool = True
+        self.separator_check: bool = True
+        self.variable_check: bool = False
+        self.method_start_offset_level: int = -1
 
     def run(self, path_code: str) -> list[Error]:
         with open(path_code, 'r', encoding='UTF-8') as code:
-            tabs_check: bool = True
-            separator_check: bool = True
-            variable_check: bool = False
-            method_start_offset_level: int = -1
-
             for line in code:
                 first_word = line.strip().split(' ')[0]
                 self.check_line_length(line)
-
-                if first_word == 'namespace':
-                    separator_check = False
-                if first_word == 'class':
-                    separator_check = False
-                    variable_check = True
-                if first_word in self.rules.tabulation_after_command:
-                    separator_check = False
-
+                self.configure_options(first_word)
                 self.check_enters(line)
                 line = line.replace("\n", "")
-
-                if self.in_method:
-                    if self.first_inner_line_method:
-                        self.check_bracket_line(line)
-                        self.first_inner_line_method = False
-
-                if self.first_inner_line_func:
-                    self.first_inner_line_func = False
-                    if '{' in line:
-                        self.check_bracket_line(line)
-                    else:
-                        self.offset_level += 1
-                        self.check_count_tabulation(line)
-                        self.offset_level -= 1
-                        tabs_check = False
-
-                decls = self.find_method_declaration(line)
-                if len(decls) > 0:
-                    separator_check = False
-                    if self.in_method:
-                        self.errors.append(
-                            Error(Error_type.serious_error, self.number_line,
-                                  (0, len(line)),
-                                  "Method cannot be inside another method"))
-                    else:
-                        method_start_offset_level = self.offset_level
-                        name = self.get_method_name(decls[0])
-                        self.check_method_name(name)
-                        self.in_method = True
-                        self.first_inner_line_method = True
-
-                if variable_check:
-                    self.variable_check(line)
+                self.check_first_line_in_method(line)
+                self.check_content_method_in_method(line)
+                if self.variable_check:
+                    self.check_variable(line)
 
                 if '{' in line or '}' in line:
                     self.check_bracket_line(line)
 
-                if tabs_check:
+                if self.tabs_check:
                     self.check_count_tabulation(line)
                 else:
-                    tabs_check = True
+                    self.tabs_check = True
 
                 self.calculate_level_tabulation(line)
-
-                if method_start_offset_level != -1 and \
-                        method_start_offset_level == self.offset_level and \
-                        not self.first_inner_line_method:
-                    self.in_method = False
-                    method_start_offset_level = -1
-
+                self.check_method_end()
                 self.check_spaces(line)
-                if separator_check:
+                if self.separator_check:
                     self.check_separate_symbol(line)
                 else:
-                    separator_check = True
-
+                    self.separator_check = True
+                self.check_variable_usage_line(line)
                 self.number_line += 1
 
+        self.check_closed_brackets(line)
+        self.check_variables_usage()
+        self.print_errors()
+        return self.errors
+
+    def configure_options(self, word):
+        if word == 'namespace':
+            self.separator_check = False
+        if word == 'class':
+            self.separator_check = False
+            self.variable_check = True
+        if word in self.rules.tabulation_after_command:
+            self.separator_check = False
+
+    def check_first_line_in_method(self, line):
+        if self.in_method:
+            if self.first_inner_line_method:
+                self.check_bracket_line(line)
+                self.first_inner_line_method = False
+        if self.first_inner_line_func:
+            self.first_inner_line_func = False
+            if '{' in line:
+                self.check_bracket_line(line)
+            else:
+                self.offset_level += 1
+                self.check_count_tabulation(line)
+                self.offset_level -= 1
+                self.tabs_check = False
+
+    def check_method_end(self):
+        if self.method_start_offset_level != -1 and \
+                self.method_start_offset_level == self.offset_level and \
+                not self.first_inner_line_method:
+            self.in_method = False
+            self.method_start_offset_level = -1
+
+    def check_content_method_in_method(self, line):
+        decls = self.find_method_declaration(line)
+        if len(decls) > 0:
+            self.separator_check = False
+            if self.in_method:
+                self.errors.append(
+                    Error(Error_type.serious_error, self.number_line,
+                          (0, len(line)),
+                          "Method cannot be inside another method"))
+            else:
+                self.method_start_offset_level = self.offset_level
+                name = self.get_method_name(decls[0])
+                self.check_method_name(name)
+                self.in_method = True
+                self.first_inner_line_method = True
+
+    def check_closed_brackets(self, line):
         if self.offset_level != 0:
             self.errors.append(
                 Error(Error_type.serious_error, self.number_line,
                       (0, len(line)),
                       "Not all brackets are closed"))
 
-        for error in self.errors:
+    def print_errors(self):
+        for error in sorted(self.errors, key=lambda e: e.number_line):
             print(f'{error.number_line}: {error.text}')
-        return self.errors
 
-    def variable_check(self, line):
+    def check_variable(self, line):
         variable_decls = self.find_common_variable_declaration(line)
 
         decls = self.find_methods_variable_declaration(line)
@@ -154,12 +164,13 @@ class Linter:
 
     def check_method_name(self, name: str) -> None:
         self.check_correspondence_alphabet(name)
-
+        self.dict_methods[name].append(self.number_line)
         if self.rules.method_pascal_case and name[0].islower():
             self.errors.append(
                 Error(Error_type.serious_error, self.number_line,
                       (0, 0),
                       "Incorrect method name"))
+
 
     @staticmethod
     def find_common_variable_declaration(line: str) -> list[str]:
@@ -178,7 +189,7 @@ class Linter:
     @staticmethod
     def find_methods_variable_declaration(line: str):
         line = re.sub(r'\s+', ' ', line.strip())
-        temp = re.findall(r'^var [\S]+\s?=\s?[\S]+\s?[;]?$', line)
+        temp = re.findall(r'^var [\S]+\s?=\s?.+\s?[;]?$', line)
 
         return temp
 
@@ -215,13 +226,28 @@ class Linter:
         return words[len(words) - 1]
 
     def check_variable_name(self, name: str):
+        self.dict_variables[name].append(self.number_line)
         self.check_correspondence_alphabet(name)
-
         if self.rules.is_camel_case and name[0].isupper():
             self.errors.append(
                 Error(Error_type.serious_error, self.number_line,
                       (0, 0),
                       "Incorrect variable name"))
+
+    def check_variables_usage(self):
+        for variable in self.dict_variables:
+            numbers_line = self.dict_variables[variable]
+            if len(numbers_line) <= 2:
+                self.errors.append(Error(Error_type.serious_error, numbers_line[0],
+                                   (0,0), f"The variable '{variable}' is declared but not used"))
+
+    def check_variable_usage_line(self, text):
+        for name in self.dict_variables:
+            all_occurrences = [_ for _ in re.finditer(name, text)]
+            for i in range(len(all_occurrences)):
+                occurrence = all_occurrences[i]
+                if not (text[occurrence.start()-1].isalpha() or text[occurrence.start()-1].isdigit() or text[occurrence.end()].isalpha() or text[occurrence.end()].isdigit()):
+                    self.dict_variables[name].append(self.number_line)
 
     def check_correspondence_alphabet(self, name: str):
         for c in name:
@@ -357,5 +383,3 @@ class Linter:
                 Error(Error_type.serious_error, self.number_line,
                       (0, len(line)),
                       "Extra spaces at the end of the line"))
-
-

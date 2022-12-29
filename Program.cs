@@ -19,10 +19,9 @@ namespace main
             var s = Console.ReadLine().Split(' ');
             var n = int.Parse(s[0]);
             var alphCount = int.Parse(s[1]);
-
+            var r = 0;
             var SCount = int.Parse(Console.ReadLine());
             var S = Console.ReadLine().Split().Select(x => int.Parse(x)).ToArray();
-
             var TCount=int.Parse(Console.ReadLine());
             T = Console.ReadLine().Split().Select(x => int.Parse(x)).ToHashSet();
 
@@ -79,6 +78,10 @@ namespace main
 
                 Console.WriteLine(h_.Intersect(T).Any());
             }
+        }
+        public void GetSum(int v)
+        {
+            Console.WriteLine(v);
         }
     }
 }
