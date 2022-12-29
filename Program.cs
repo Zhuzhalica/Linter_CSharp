@@ -1,4 +1,4 @@
-﻿keys = new HashSet<Tuple<int, char>>()
+﻿var s = Console.ReadLine().Split(' ');
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -16,7 +16,7 @@ namespace main
 
         private static void Main ()
         {
-            var s = Console.ReadLine().Split(' ');
+            var s = Console.ReadLine().Split();
             var n = int.Parse(s[0]);
             var alphCount = int.Parse(s[1]);
             var r = 0;
@@ -31,7 +31,7 @@ namespace main
             {
                 for (var j = 0; j < alphCount; j++)
                 {
-                    s = Console.ReadLine().Split(' ');
+                    s = Console.ReadLine().Split();
                     var letter = s[0][0];
                     var count = int.Parse(s[1]);
                     var line = Console.ReadLine();
