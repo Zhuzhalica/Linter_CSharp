@@ -20,10 +20,12 @@ class Linter:
         self.separator_check: bool = True
         self.variable_check: bool = False
         self.method_start_offset_level: int = -1
+        self.code: list[str] = []
 
     def run(self, path_code: str) -> list[Error]:
         with open(path_code, 'r', encoding='UTF-8') as code:
-            for line in code:
+            self.code = [_ for _ in code]
+            for line in self.code:
                 first_word = line.strip().split(' ')[0]
                 self.check_line_length(line)
                 self.configure_options(first_word)
@@ -51,10 +53,8 @@ class Linter:
                     self.separator_check = True
                 self.check_variable_usage_line(line)
                 self.number_line += 1
-
-        self.check_closed_brackets(line)
+        self.check_closed_brackets(self.code[-1])
         self.check_variables_usage()
-        self.print_errors()
         return self.errors
 
     def configure_options(self, word):
@@ -96,7 +96,7 @@ class Linter:
                 self.errors.append(
                     Error(Error_type.serious_error, self.number_line,
                           (0, len(line)),
-                          "Method cannot be inside another method"))
+                          "Method cannot be inside another method", line))
             else:
                 self.method_start_offset_level = self.offset_level
                 name = self.get_method_name(decls[0])
@@ -109,11 +109,7 @@ class Linter:
             self.errors.append(
                 Error(Error_type.serious_error, self.number_line,
                       (0, len(line)),
-                      "Not all brackets are closed"))
-
-    def print_errors(self):
-        for error in sorted(self.errors, key=lambda e: e.number_line):
-            print(f'{error.number_line}: {error.text}')
+                      "Not all brackets are closed", self.code[self.number_line - 1]))
 
     def check_variable(self, line):
         variable_decls = self.find_common_variable_declaration(line)
@@ -126,24 +122,25 @@ class Linter:
                     name = self.get_variable_name(decl)
                     self.check_variable_name(name)
             else:
+                start = line.find(decls[0])
                 self.errors.append(
                     Error(Error_type.serious_error,
                           self.number_line,
-                          (0, len(line)),
-                          "Incorrect way to declare a variable"))
+                          (start, len(line)),
+                          "Incorrect way to declare a variable", self.code[self.number_line - 1]))
 
-        decls = self.find_classes_variable_declaration(line)
-        if len(decls) > 0:
-            if not self.in_method:
-                decls.extend(variable_decls)
-                for decl in decls:
-                    self.check_class_variable_name(decl)
-            else:
-                self.errors.append(
-                    Error(Error_type.serious_error,
-                          self.number_line,
-                          (0, len(line)),
-                          "Incorrect way to declare a variable"))
+        #decls = self.find_classes_variable_declaration(line)
+        #if len(decls) > 0:
+        #    if not self.in_method:
+        #        decls.extend(variable_decls)
+        #        for decl in decls:
+        #            self.check_class_variable_name(decl)
+        #    else:
+        #        self.errors.append(
+        #            Error(Error_type.serious_error,
+        #                  self.number_line,
+        #                  (0, len(line)),
+        #                  "Incorrect way to declare a variable", self.code[self.number_line - 1]))
 
     @staticmethod
     def find_method_declaration(line: str) -> list[str]:
@@ -166,11 +163,12 @@ class Linter:
         self.check_correspondence_alphabet(name)
         self.dict_methods[name].append(self.number_line)
         if self.rules.method_pascal_case and name[0].islower():
+            line = self.code[self.number_line - 1]
+            start = line.find(name)
             self.errors.append(
                 Error(Error_type.serious_error, self.number_line,
-                      (0, 0),
-                      "Incorrect method name"))
-
+                      (start, start + len(name)),
+                      "Incorrect method name", line))
 
     @staticmethod
     def find_common_variable_declaration(line: str) -> list[str]:
@@ -229,17 +227,21 @@ class Linter:
         self.dict_variables[name].append(self.number_line)
         self.check_correspondence_alphabet(name)
         if self.rules.is_camel_case and name[0].isupper():
+            line = self.code[self.number_line - 1]
+            start = line.find(name)
             self.errors.append(
                 Error(Error_type.serious_error, self.number_line,
-                      (0, 0),
-                      "Incorrect variable name"))
+                      (start, len(name) + start + 1),
+                      "Incorrect variable name", line))
 
     def check_variables_usage(self):
         for variable in self.dict_variables:
             numbers_line = self.dict_variables[variable]
             if len(numbers_line) <= 2:
+                line = self.code[numbers_line[0] - 1]
+                start = line.find(variable)
                 self.errors.append(Error(Error_type.serious_error, numbers_line[0],
-                                   (0,0), f"The variable '{variable}' is declared but not used"))
+                                   (start, start + len(variable) + 1), f"The variable '{variable}' is declared but not used", line))
 
     def check_variable_usage_line(self, text):
         for name in self.dict_variables:
@@ -252,10 +254,12 @@ class Linter:
     def check_correspondence_alphabet(self, name: str):
         for c in name:
             if c not in self.rules.alphabet_variable:
+                line = self.code[self.number_line - 1]
+                start = line.find(name)
                 self.errors.append(
                     Error(Error_type.serious_error, self.number_line,
-                          (0, 0),
-                          "The name does not match the allowed alphabet"))
+                          (start, start + len(name)),
+                          "The name does not match the allowed alphabet", line))
 
     def check_class_variable_name(self, line: str):
         ind = line.find('=')
@@ -267,6 +271,8 @@ class Linter:
         decl = line[:ind]
         words = re.sub(r'\s+', ' ', decl.strip()).split(' ')
         name = words[len(words) - 1]
+        line = self.code[self.number_line - 1]
+        start = line.find(name)
         if words[0] == 'private' or words[0] == 'static' or len(words) == 2:
             self.check_correspondence_alphabet(
                 words[len(words) - 1].replace('_', ''))
@@ -274,23 +280,23 @@ class Linter:
             if name[0] != '_' or name[0].isupper():
                 self.errors.append(
                     Error(Error_type.serious_error, self.number_line,
-                          (0, len(line)),
-                          "Incorrect variable name"))
+                          (start, start + len(name)),
+                          "Incorrect variable name", line))
         else:
             self.check_correspondence_alphabet(name)
 
             if name[0].islower():
                 self.errors.append(
                     Error(Error_type.serious_error, self.number_line,
-                          (0, len(line)),
-                          "Incorrect variable name"))
+                          (start, start + len(name)),
+                          "Incorrect variable name", line))
 
     def check_line_length(self, line: str):
         if len(line) > self.rules.max_symbol_line:
             self.errors.append(
                 Error(Error_type.serious_error, self.number_line,
                       (0, len(line)),
-                      "Exceeding the number of characters in a string"))
+                      "Exceeding the number of characters in a string", line))
 
     def check_separate_symbol(self, line: str):
         l = line.strip()
@@ -302,17 +308,18 @@ class Linter:
             if len(parts) != 2 or parts[1] != '':
                 self.errors.append(
                     Error(Error_type.serious_error, self.number_line,
-                          (0, 0),
-                          "Incorrect line separation"))
+                          (0, len(line)),
+                          "Incorrect line separation", line))
 
     def check_count_tabulation(self, line: str) -> None:
         if line.strip() != '' and '}' not in line:
             if len(line.lstrip()) + self.rules.tabulation_size * \
                     self.offset_level != len(line):
+
                 self.errors.append(
                     Error(Error_type.serious_error, self.number_line,
                           (0, len(line)),
-                          "Incorrect tab level"))
+                          "Incorrect tab level", line))
 
     def calculate_level_tabulation(self, line: str) -> None:
         words = line.split(' ')
@@ -331,18 +338,20 @@ class Linter:
         else:
             self.enters_count = 0
             if self.enters_count > self.rules.max_enters:
+                start = line.rfind(" ")
                 self.errors.append(
                     Error(Error_type.serious_error, self.number_line,
-                          (0, len(line)),
-                          "Extra enters inside the method"))
+                          (0, start),
+                          "Extra enters inside the method", line))
 
     def check_bracket_line(self, line: str) -> None:
         l = line.strip()
         if self.rules.bracket_separate_line and l != '{' and l != '}':
+            start = line.find(l)
             self.errors.append(
                 Error(Error_type.serious_error, self.number_line,
-                      (0, len(line)),
-                      "Characters in a string with a bracket"))
+                      (start, start+len(l)),
+                      "Characters in a string with a bracket", line))
 
     def check_spaces(self, line: str) -> None:
         line = line.lstrip().replace('\n', '')
@@ -356,25 +365,26 @@ class Linter:
                 if spaces_count > self.rules.max_spaces:
                     self.errors.append(
                         Error(Error_type.serious_error, self.number_line,
-                              (0, len(line)),
-                              "Extra spaces"))
+                              (i - 1, i),
+                              "Extra spaces", self.code[self.number_line - 1]))
 
                 if ch in self.rules.characters_separated_spaces:
                     if line[i - 1] != ' ' or line[i + 1] != ' ':
                         if ch == '=' and line[i + 1] != '>':
+                            start = line.find(ch)
                             self.errors.append(
                                 Error(Error_type.serious_error,
                                       self.number_line,
-                                      (0, len(line)),
-                                      "There are no spaces around the operation"))
+                                      (start, start + 1),
+                                      "There are no spaces around the operation", line))
 
                 if first_word not in self.rules.tabulation_after_command and \
                         ch == '(':
                     if line[i - 1] == ' ':
                         self.errors.append(
                             Error(Error_type.serious_error, self.number_line,
-                                  (0, len(line)),
-                                  "Extra spaces before ("))
+                                  (i, i + 1),
+                                  "Extra spaces before (", line))
 
                 spaces_count = 0
 
@@ -382,4 +392,4 @@ class Linter:
             self.errors.append(
                 Error(Error_type.serious_error, self.number_line,
                       (0, len(line)),
-                      "Extra spaces at the end of the line"))
+                      "Extra spaces at the end of the line", line))

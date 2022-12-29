@@ -10,7 +10,7 @@ namespace main
 {
     class Program
     {
-        public static  HashSet<int> T;
+        public  static  HashSet<int> T;
         public static Dictionary<Tuple<int, char>, int[]> dict;
         public static HashSet<Tuple<int, char>> keys;
 
@@ -19,7 +19,7 @@ namespace main
             var s = Console.ReadLine().Split(' ');
             var n = int.Parse(s[0]);
             var alphCount = int.Parse(s[1]);
-            var r = 0;
+            var rD = 0;
             var SCount = int.Parse(Console.ReadLine());
             var S = Console.ReadLine().Split().Select(x => int.Parse(x)).ToArray();
             var TCount=int.Parse(Console.ReadLine());
