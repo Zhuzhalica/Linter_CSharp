@@ -1,0 +1,15 @@
+{
+  "max_enters": 1,
+  "max_spaces": 1,
+  "tabulation_size": 4,
+  "alphabet_variable": ["a-z", "A-Z"],
+  "variable_camel_case": true,
+  "characters_separated_spaces": ["+", "-", "*", "/", "%", "=", "==", "!=", "=>",
+    "+=", "-=", "*=", "/=", "%="],
+  "method_pascal_case": true,
+  "bracket_separate_line": true,
+  "max_symbol_line": 120,
+  "separate_symbol": ";",
+  "inner_variable_lowercase": true,
+  "tabulation_after_command": ["for","foreach", "while", "if", "else", "switch", "try", "catch", "finally"]
+}
