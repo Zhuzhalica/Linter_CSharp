@@ -58,7 +58,7 @@ def console_args_processing() -> tuple[bool, str, list[str]]:
             if code_paths[0].split('.')[1] != "cs":
                 raise ValueError("Invalid file format: valid is .cs")
 
-    return True, rule_path, code_paths
+    return False, rule_path, code_paths
 
 
 if __name__ == '__main__':
