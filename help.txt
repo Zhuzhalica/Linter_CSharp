@@ -1,0 +1,5 @@
+Params:
+--help ~ -h - output help for working with the program in the console
+--pathC=[0] ~ -pc=[0] - where [0] is absolute path to the code file .cs (if not specified, a special search window opens and the console version supports only one path at a time)
+--pathR=[0] ~ -pr=[0] - where [0] is absolute path to the rule file .json (if not specified, a special search window opens)
+without args - a window opens for selecting both the path to the code and to the rules

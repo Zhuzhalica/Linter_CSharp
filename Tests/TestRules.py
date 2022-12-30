@@ -1,18 +1,19 @@
+import sys
 import unittest
 from rules import Rules
+from Tests.system_methods import add_path
+
 
 class TestRules(unittest.TestCase):
     def setUp(self):
-        self.rules = Rules('C:\\Users\\German\\Linter_CSharp\\Tests\\r1.json')
+        path = add_path(sys.path, "Tests\\r1.json")
+        self.rules = Rules(path)
 
     def test_parse_max_enters(self):
         self.assertEqual(self.rules.max_enters, 1)
 
     def test_parse_max_symbol_line(self):
         self.assertEqual(self.rules.max_symbol_line, 120)
-
-    #def test_parse_min_enters_after_method(self):
-    #    self.assertEqual(self.rules.min_enters, 1)
 
     def test_parse_tabulation_size(self):
         self.assertEqual(self.rules.tabulation_size, 4)

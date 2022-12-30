@@ -1,10 +1,16 @@
+import sys
+
 from linter import Linter
 from rules import Rules
 import unittest
 
+from Tests.system_methods import add_path
+
+
 class TestLinter(unittest.TestCase):
     def setUp(self):
-        self.rules = Rules('C:\\Users\\German\\Linter_CSharp\\Tests\\r1.json')
+        path = add_path(sys.path, "Tests\\r1.json")
+        self.rules = Rules(path)
         self.linter = Linter(self.rules)
 
     def test_init(self):
@@ -28,22 +34,29 @@ class TestLinter(unittest.TestCase):
         self.assertEqual(len(self.linter.errors), 0)
 
     def test_check_class_variable_declaration(self):
-        self.assertEqual(len(self.linter.find_classes_variable_declaration("public static int N = 1;")), 0)
+        self.assertEqual(len(self.linter.find_classes_variable_declaration(
+            "public static int N = 1;")), 1)
 
     def test_check_class_variable_name(self):
-        self.linter.check_class_variable_name("public static  HashSet<int> t = new HashSet<int>();")
+        self.linter.check_class_variable_name(
+            "public static  HashSet<int> t = new HashSet<int>();",
+            "public static  HashSet<int> t = new HashSet<int>();")
         self.assertEqual(len(self.linter.errors), 1)
 
     def test_check_line_length(self):
-        line = "                                var Lsost = line.Split(' ').Where(x => x.Length > 0).Select(x => int.Parse(x)).ToArray();"
+        line = "                                var Lsost = line.Split(' ')" \
+               ".Where(x => x.Length > 0).Select(x => int.Parse(x)).ToArray();"
         self.linter.check_line_length(line)
         self.assertEqual(len(self.linter.errors), 1)
 
     def test_get_variable_name(self):
-        self.assertEqual(self.linter.get_variable_name("var result = 0;"), "result")
+        self.assertEqual(self.linter.get_variable_name("var result = 0;"),
+                         "result")
 
     def test_get_variable_name_(self):
-        self.assertEqual(self.linter.get_variable_name("var Users = new List<int>();"), "Users")
+        self.assertEqual(
+            self.linter.get_variable_name("var Users = new List<int>();"),
+            "Users")
 
     def test_check_bracket_line(self):
         self.linter.check_bracket_line("}s")
@@ -54,23 +67,24 @@ class TestLinter(unittest.TestCase):
         self.assertEqual(name, "FindResult")
 
     def test_check_correspondence_alphabet(self):
-        self.linter.check_correspondence_alphabet("resultsК")
+        self.linter.check_correspondence_alphabet("resultsК", "resultsК")
         self.assertEqual(len(self.linter.errors), 1)
 
     def test_check_variable_name(self):
-        self.linter.check_variable_name("ListUsers")
+        self.linter.check_variable_name("ListUsers", "ListUsers")
         self.assertEqual(len(self.linter.errors), 1)
 
     def test_check_method_name_without_error(self):
-        self.linter.check_method_name("FindResultGraph")
+        self.linter.check_method_name("ListUsers", "ListUsers")
         self.assertEqual(len(self.linter.errors), 0)
 
     def test_check_method_name_with_error(self):
-        self.linter.check_method_name("findResultGraph")
+        self.linter.check_method_name("findResultGraph", "findResultGraph")
         self.assertEqual(len(self.linter.errors), 1)
 
     def test_check_enters(self):
-        self.linter.check_enters("public static void GetAnswer (int[] S,List<string> words)    ")
+        self.linter.check_enters(
+            "public static void GetAnswer (int[] S,List<string> words)    ")
         self.assertEqual(len(self.linter.errors), 0)
 
     def test_check_count_tabulation(self):
@@ -96,7 +110,7 @@ class TestLinter(unittest.TestCase):
     def test_is_method_declaration(self):
         method = "public static void GetAnswer(int[] S, List<string> words)"
         v = self.linter.find_method_declaration(method)
-        self.assertEqual(v[0],method)
+        self.assertEqual(v[0], method)
 
     def test_check_calculate_level_tabulation(self):
         self.linter.calculate_level_tabulation("    {")
@@ -107,27 +121,32 @@ class TestLinter(unittest.TestCase):
         self.assertEqual(self.linter.offset_level, -1)
 
     def test_find_common_variable_declaration(self):
-        variable = self.linter.find_common_variable_declaration("for (var i=0; i < 5; i++)")
+        variable = self.linter.find_common_variable_declaration(
+            "for (var i=0; i < 5; i++)")
         self.assertEqual(len(variable), 1)
 
     def test_find_methods_variable_declaration(self):
-        variables = self.linter.find_methods_variable_declaration('var l = int.Parse("ste");')
+        variables = self.linter.find_methods_variable_declaration(
+            'var l = int.Parse("ste");')
         self.assertEqual(len(variables), 1)
 
     def test_check_class_name(self):
         self.linter.in_method = True
-        self.linter.check_class_variable_name("var s = Console.ReadLine().Split();")
+        self.linter.check_class_variable_name(
+            "var s = Console.ReadLine().Split();",
+            "var s = Console.ReadLine().Split();")
         self.assertEqual(len(self.linter.errors), 1)
 
     def test_check_variable_usage_line(self):
-        self.linter.dict_variables["r"] = [19,19]
+        self.linter.dict_variables["r"] = [19, 19]
         self.linter.number_line = 21
         self.linter.check_variable_usage_line("var s = r + 10;")
         self.assertEqual(len(self.linter.dict_variables["r"]), 3)
 
     def test_check_variable_usage(self):
-        self.linter.dict_variables["r"] = [19, 19, 20]
-        self.linter.dict_variables["S"] = [21, 21]
+        self.linter.code = ["r", "r", "S"]
+        self.linter.dict_variables["r"] = [1, 1, 2]
+        self.linter.dict_variables["S"] = [3, 3]
         self.linter.check_variables_usage()
         self.assertEqual(len(self.linter.errors), 1)
 
@@ -149,7 +168,7 @@ class TestLinter(unittest.TestCase):
     def test_variable_check_in_class_out_method(self):
         self.linter.in_method = False
         self.linter.check_variable("public int Number = 5;")
-        self.assertEqual(len(self.linter.errors), 1)
+        self.assertEqual(len(self.linter.errors), 0)
 
     def test_configure_options_class(self):
         self.linter.configure_options("class")
@@ -193,14 +212,17 @@ class TestLinter(unittest.TestCase):
 
     def test_check_content_method_in_method(self):
         self.linter.in_method = True
-        self.linter.check_content_method_in_method('            public static void GetAnswer(int k)')
+        self.linter.check_content_method_in_method(
+            '            public static void GetAnswer(int k)')
         self.assertEqual(len(self.linter.errors), 1)
 
     def test_check_content_method_out_method(self):
         self.linter.in_method = False
-        self.linter.check_content_method_in_method('        public static void GetAnswer(int k)')
+        self.linter.check_content_method_in_method(
+            '        public static void GetAnswer(int k)')
         self.assertEqual(len(self.linter.errors), 0)
 
     def test_run(self):
-        self.linter.run("C:\\Users\\German\\Linter_CSharp\\Tests\\DM.cs")
+        path = add_path(sys.path, "Tests\\DM.cs")
+        self.linter.run(path)
         self.assertEqual(len(self.linter.errors), 9)

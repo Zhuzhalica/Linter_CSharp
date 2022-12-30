@@ -10,7 +10,7 @@ namespace main
 {
     class Program
     {
-        public  static  HashSet<int> T;
+        public  static  hashSet<int> T;
         public static Dictionary<Tuple<int, char>, int[]> dict;
         public static HashSet<Tuple<int, char>> keys;
 
